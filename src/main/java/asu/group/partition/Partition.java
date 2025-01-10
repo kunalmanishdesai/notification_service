@@ -57,6 +57,10 @@ public class Partition {
 
     private final ObjectOutputStream partitionFileWriter;
 
+    public String getPrefix() {
+        return prefix;
+    }
+
     private final String prefix;
 
     private int baseOffset = 0;
@@ -109,6 +113,10 @@ public class Partition {
         SegmentFileMetadata segmentFileMetadata = getSegmentFile(messageId);
         return new SegmentFileReader(segmentFileMetadata.getFilename())
                 .read(messageId-segmentFileMetadata.getBaseOffset());
+    }
+
+    public List<SegmentFileMetadata> getSegmentFileMetadataList() {
+        return segmentFileMetadataList;
     }
 
     public void close() throws IOException {
