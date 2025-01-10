@@ -42,6 +42,11 @@ public class Partition {
                 try {
                     // Read an object from the stream
                     SegmentFileMetadata segmentFileMetadata = (SegmentFileMetadata) objectInputStream.readObject();
+
+                    if (segmentFileMetadata.getCreationTime() == null) {
+                        segmentFileMetadata.setCreationTimeToNow();
+                    }
+
                     segmentFileMetadataList.add(segmentFileMetadata);
                 } catch (EOFException e) {
                     // End of file reached
@@ -73,27 +78,33 @@ public class Partition {
     public void append(String message) throws IOException {
 
         lock.lock();
-        Message message1 = new Message(message);
 
-        // roll if no segment file is present or activeFile is full
-        if (segmentFileMetadataList.isEmpty() || activeFile == null || activeFile.shouldRoll(message1)) {
+        try {
+            Message message1 = new Message(message);
 
-            if (activeFile != null) {
-                activeFile.close();
+            // roll if no segment file is present or activeFile is full
+            if (segmentFileMetadataList.isEmpty() || activeFile == null || activeFile.shouldRoll(message1)) {
+
+                if (activeFile != null) {
+                    activeFile.close();
+                }
+
+                SegmentFileMetadata activeFileMetadata = new SegmentFileMetadata(prefix, baseOffset);
+
+                partitionFileWriter.writeObject(activeFileMetadata);
+                partitionFileWriter.flush();
+
+                activeFile = new SegmentFile(activeFileMetadata, true);
+                segmentFileMetadataList.add(activeFileMetadata);
             }
 
-            SegmentFileMetadata activeFileMetadata = new SegmentFileMetadata(prefix, baseOffset);
+            activeFile.append(message1);
+            baseOffset += message1.getMessageTotalSize();
 
-            partitionFileWriter.writeObject(activeFileMetadata);
-            partitionFileWriter.flush();
-
-            activeFile = new SegmentFile(activeFileMetadata, true);
-            segmentFileMetadataList.add(activeFileMetadata);
+            segmentFileMetadataList.get(segmentFileMetadataList.size() - 1).setCreationTimeToNow();
+        } finally {
+            lock.unlock();
         }
-
-        activeFile.append(message1);
-        baseOffset += message1.getMessageTotalSize();
-        lock.unlock();
     }
 
     public SegmentFileMetadata getSegmentFile(int messageId) {
