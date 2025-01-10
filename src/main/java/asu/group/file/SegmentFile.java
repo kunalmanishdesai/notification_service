@@ -63,7 +63,9 @@ public class SegmentFile implements Closeable {
     }
 
     public void save() throws IOException {
-        outputStream.flush();
+        if (outputStream != null) {
+            outputStream.flush();
+        }
     }
 
 
