@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class SegmentFileMetadata implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final Instant creationTime;
+    private transient Instant creationTime;
     private final String prefix;
     private final int baseOffset;
 
@@ -19,6 +19,10 @@ public class SegmentFileMetadata implements Serializable {
         this.prefix = prefix;
         this.baseOffset = baseOffset;
         this.creationTime = creationTime;
+    }
+
+    public void setCreationTimeToNow() {
+        creationTime = Instant.now();
     }
 
     public Instant getCreationTime() {
