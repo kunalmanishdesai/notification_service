@@ -62,6 +62,10 @@ public class SegmentFile implements Closeable {
         offset += message.getMessageTotalSize();
     }
 
+    public void save() throws IOException {
+        outputStream.flush();
+    }
+
 
     public boolean shouldRoll(Message message) {
         return offset + message.getMessageTotalSize() > FILE_SIZE;
